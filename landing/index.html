@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Shopper — AI shopping companion</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo: #4f46e5;
+      --indigo-dark: #4338ca;
+      --violet: #6d28d9;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --bg-soft: #f8fafc;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Nav ─────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 60px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(226,232,240,0.6);
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-logo-icon {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--indigo), var(--violet));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 18px;
+      background: var(--indigo);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .nav-cta:hover { background: var(--indigo-dark); transform: translateY(-1px); }
+
+    /* ── Hero ────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(79,70,229,0.1) 0%, transparent 70%);
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      background: #eef2ff;
+      color: var(--indigo);
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 28px;
+      border: 1px solid #c7d2fe;
+    }
+    .hero-badge-dot {
+      width: 6px; height: 6px;
+      background: var(--indigo);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      max-width: 720px;
+      margin-bottom: 20px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, var(--indigo), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 19px);
+      color: var(--muted);
+      max-width: 520px;
+      margin-bottom: 40px;
+      line-height: 1.65;
+    }
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 64px;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, var(--indigo), var(--violet));
+      color: #fff;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 4px 20px rgba(79,70,229,0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(79,70,229,0.5);
+    }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1.5px solid var(--border);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-secondary:hover { border-color: #a5b4fc; background: #fafbff; }
+
+    /* ── Panel preview ───────────────────────────────── */
+    .hero-preview {
+      width: 100%;
+      max-width: 380px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 2px 0 0 #e2e8f0, 0 20px 60px rgba(15,23,42,0.12), 0 4px 16px rgba(79,70,229,0.08);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .preview-header {
+      padding: 14px 16px;
+      background: linear-gradient(135deg, var(--indigo), var(--violet));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .preview-header-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .preview-header-dots { display: flex; gap: 5px; }
+    .preview-header-dots span {
+      width: 6px; height: 6px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 50%;
+    }
+    .preview-product {
+      display: flex;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+    }
+    .preview-thumb {
+      width: 54px; height: 54px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .preview-product-info { flex: 1; }
+    .preview-product-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.35;
+    }
+    .preview-product-price { font-size: 15px; font-weight: 700; color: var(--indigo); margin-bottom: 4px; }
+    .preview-stars { color: #f59e0b; font-size: 11px; }
+    .preview-verdict {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 16px;
+      padding: 10px 14px;
+      background: #f0fdf4;
+      border: 1.5px solid #86efac;
+      border-radius: 10px;
+    }
+    .preview-verdict-badge {
+      width: 26px; height: 26px;
+      background: #22c55e;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .preview-verdict-label { font-size: 14px; font-weight: 800; color: #15803d; flex: 1; }
+    .preview-verdict-conf { font-size: 11px; color: #94a3b8; }
+    .preview-row {
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .preview-row-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #94a3b8;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .preview-bar-wrap { flex: 1; height: 5px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+    .preview-bar { height: 100%; background: linear-gradient(90deg, #34d399, #22c55e); border-radius: 99px; }
+    .preview-score { font-size: 11px; font-weight: 700; color: #475569; }
+    .preview-pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+    }
+    .preview-item {
+      display: flex;
+      gap: 5px;
+      font-size: 11px;
+      color: #334155;
+      align-items: flex-start;
+    }
+    .preview-check { color: #22c55e; font-weight: 700; }
+    .preview-x     { color: #ef4444; font-weight: 700; }
+
+    /* ── Sites ───────────────────────────────────────── */
+    .sites-strip {
+      padding: 20px 40px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .sites-strip-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .site-pill {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      color: var(--text);
+    }
+
+    /* ── Features ────────────────────────────────────── */
+    .features {
+      padding: 100px 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--indigo);
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(26px, 4vw, 38px);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      text-align: center;
+      margin-bottom: 14px;
+      line-height: 1.2;
+    }
+    .section-sub {
+      font-size: 17px;
+      color: var(--muted);
+      text-align: center;
+      max-width: 500px;
+      margin: 0 auto 60px;
+      line-height: 1.65;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      padding: 28px;
+      background: var(--bg-soft);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .feature-card:hover {
+      border-color: #a5b4fc;
+      box-shadow: 0 4px 20px rgba(79,70,229,0.08);
+    }
+    .feature-icon {
+      width: 44px; height: 44px;
+      background: #eef2ff;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+    .feature-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+    .feature-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* ── How it works ────────────────────────────────── */
+    .how {
+      padding: 80px 24px;
+      background: var(--bg-soft);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .how-inner {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 48px;
+    }
+    .step {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      position: relative;
+    }
+    .step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 44px;
+      width: 2px;
+      height: calc(100% - 4px);
+      background: linear-gradient(to bottom, #c7d2fe, transparent);
+    }
+    .step-num {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--indigo), var(--violet));
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .step-body { padding: 8px 0 40px; }
+    .step-body h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .step-body p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* ── CTA ─────────────────────────────────────────── */
+    .cta {
+      padding: 100px 24px;
+      text-align: center;
+    }
+    .cta h2 {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .cta p { font-size: 17px; color: var(--muted); margin-bottom: 36px; }
+
+    /* ── Footer ──────────────────────────────────────── */
+    footer {
+      padding: 28px 40px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .footer-note { font-size: 12px; color: var(--muted); }
+    .footer-note a { color: var(--indigo); text-decoration: none; }
+    .footer-note a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      nav { padding: 0 20px; }
+      .hero { padding: 100px 20px 60px; }
+      .features { padding: 64px 20px; }
+      footer { padding: 24px 20px; }
+      .sites-strip { padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+      </div>
+      Smart Shopper
+    </a>
+    <a class="nav-cta" href="#install">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Add to Chrome
+    </a>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      AI-powered shopping companion
+    </div>
+
+    <h1>Shop smarter,<br />not <em>harder</em></h1>
+
+    <p class="hero-sub">
+      Smart Shopper analyzes any product page in seconds — deal score, review intelligence, honest pros & cons, and who it's actually for.
+    </p>
+
+    <div class="hero-actions">
+      <a class="btn-primary" href="#install">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Add to Chrome — it's free
+      </a>
+      <a class="btn-secondary" href="#features">See what it does</a>
+    </div>
+
+    <!-- Panel mockup -->
+    <div class="hero-preview">
+      <div class="preview-header">
+        <div class="preview-header-logo">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 01-8 0"/>
+          </svg>
+          Smart Shopper
+        </div>
+        <div class="preview-header-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="preview-product">
+        <div class="preview-thumb">🎧</div>
+        <div class="preview-product-info">
+          <div class="preview-product-name">Sony WH-1000XM5 Wireless Headphones</div>
+          <div class="preview-product-price">$279.99</div>
+          <div class="preview-stars">★★★★★ <span style="color:#94a3b8;font-size:10px">4,821 reviews</span></div>
+        </div>
+      </div>
+
+      <div class="preview-verdict">
+        <div class="preview-verdict-badge">✓</div>
+        <div class="preview-verdict-label">BUY IT</div>
+        <div class="preview-verdict-conf">Confidence: 9/10</div>
+      </div>
+
+      <div class="preview-row">
+        <div class="preview-row-label">
+          Deal Score
+          <div class="preview-bar-wrap"><div class="preview-bar" style="width:80%"></div></div>
+          <span class="preview-score">8/10</span>
+        </div>
+        <div style="font-size:11px;color:#64748b">Competitive price — matches typical street price for this model.</div>
+      </div>
+
+      <div class="preview-row">
+        <div class="preview-row-label">Pros & Cons</div>
+        <div class="preview-pros-cons">
+          <div class="preview-item"><span class="preview-check">✓</span> Best-in-class ANC</div>
+          <div class="preview-item"><span class="preview-x">✕</span> No waterproofing</div>
+          <div class="preview-item"><span class="preview-check">✓</span> 30hr battery</div>
+          <div class="preview-item"><span class="preview-x">✕</span> Pricey vs. WH-1000XM4</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Supported sites -->
+  <div class="sites-strip">
+    <span class="sites-strip-label">Works on</span>
+    <span class="site-pill">Amazon</span>
+    <span class="site-pill">Best Buy</span>
+    <span class="site-pill">Walmart</span>
+    <span class="site-pill">Target</span>
+    <span class="site-pill">eBay</span>
+    <span class="site-pill">Newegg</span>
+  </div>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything you need to decide with confidence</h2>
+    <p class="section-sub">No more opening 10 tabs. Smart Shopper surfaces the right context, right on the page.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Buy / Consider / Skip</h3>
+        <p>A clear verdict with confidence score so you don't have to weigh everything yourself.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💰</div>
+        <h3>Deal Score</h3>
+        <p>Is this price actually fair? A 1–10 score with a plain-English explanation of the value.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✅</div>
+        <h3>Honest Pros & Cons</h3>
+        <p>Pulled from product details and reviews — not marketing copy.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>Review Intelligence</h3>
+        <p>Flags suspicious review patterns and tells you how much to trust the rating.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👤</div>
+        <h3>Who It's Really For</h3>
+        <p>Understand if this product fits your specific needs — or who should look elsewhere.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <h3>Smarter Alternatives</h3>
+        <p>Get 2–3 alternatives worth considering before you commit.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how">
+    <div class="how-inner">
+      <div class="section-label">How it works</div>
+      <h2 class="section-title" style="text-align:center">Up and running in 3 steps</h2>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h3>Install the extension</h3>
+            <p>Add Smart Shopper to Chrome in one click. No account needed.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h3>Add your OpenRouter key</h3>
+            <p>Smart Shopper uses Claude via OpenRouter. Get a free key at <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--indigo)">openrouter.ai</a> and paste it in settings.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body" style="padding-bottom:0">
+            <h3>Browse normally</h3>
+            <p>Open any product page. Click the Smart Shopper button in the bottom-right corner and get instant AI analysis.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta" id="install">
+    <h2>Stop guessing.<br />Start shopping smart.</h2>
+    <p>Free to use. Bring your own API key.</p>
+    <a class="btn-primary" href="https://github.com/your-repo/smart-shopper/releases/latest" target="_blank">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download Smart Shopper
+    </a>
+    <p style="margin-top:16px;font-size:13px;color:#94a3b8">
+      Chrome extension · Manifest V3 · Open source
+    </p>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-logo">
+      <div style="width:24px;height:24px;background:linear-gradient(135deg,#4f46e5,#6d28d9);border-radius:6px;display:flex;align-items:center;justify-content:center;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+      </div>
+      Smart Shopper
+    </div>
+    <span class="footer-note">Powered by Claude via <a href="https://openrouter.ai" target="_blank">OpenRouter</a></span>
+  </footer>
+
+</body>
+</html>
